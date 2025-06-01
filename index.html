@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radio Station Schedule</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #000000;
+            border-radius: 1rem; /* Tailwind's rounded-xl */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 44px 6px -2px rgba(0, 0, 0, 0.05); /* Tailwind's shadow-xl */
+            padding: 2.5rem; /* Tailwind's p-10 */
+            text-align: center;
+            max-width: 90%; /* Responsive width */
+            width: 500px;
+            position: relative; /* Needed for absolute positioning of pop-up */
+        }
+        .show-time-at-top {
+            font-size: 1.5rem; /* Slightly larger for prominence */
+            font-weight: 700;
+            color: #000000; /* Black color for the time at the top */
+            margin-bottom: 0.5rem;
+        }
+        .show-title {
+            font-size: 2.25rem; /* Tailwind's text-4xl */
+            font-weight: 700; /* Tailwind's font-bold */
+            color: black; /* Changed to yellow */
+            margin-bottom: 0.75rem; /* Tailwind's mb-3 */
+        }
+        .presenter-name {
+            font-size: 1.25rem; /* Tailwind's text-xl */
+            font-weight: 600; /* Tailwind's font-semibold */
+            color: #000000; /* Changed to a lighter grey */
+        }
+        .time-display {
+            font-size: 1rem; /* Tailwind's text-base */
+            color: #a0aec0; /* Changed to a lighter grey */
+            margin-top: 1.5rem; /* Tailwind's mt-6 */
+        }
+        .progress-bar-container {
+            width: 100%;
+            background-color: black;
+            border-radius: 9999px; /* Tailwind's rounded-full */
+            height: 0.75rem; /* Tailwind's h-3 */
+            margin-top: 2.5rem; /* Increased margin-top to make space for labels above */
+            overflow: visible; /* Changed to visible to allow labels to appear outside */
+            position: relative; /* Needed for absolute positioning of time labels */
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: yellow;
+            border-radius: 9999px; /* Tailwind's rounded-full */
+            width: 0%; /* Initial width */
+            transition: width 0.5s ease-in-out; /* Smooth transition for width changes */
+        }
+
+        /* CSS for flashing "On Air" text */
+        @keyframes flashRed {
+            0%, 100% { color: #ef4444; /* Tailwind red-500 */ }
+            50% { color: #b91c1c; /* Tailwind red-700 */ }
+        }
+        .flashing-on-air {
+            animation: flashRed 1.15s infinite alternate; /* Flash every 1.5 seconds */
+        }
+
+        /* Styling for the show image - adjusted for original dimensions and reduced size */
+        .show-image {
+            width: 200px; /* Reduced width */
+            height: 200px; /* Reduced height */
+            object-fit: contain; /* Ensures the entire image is visible within the bounds */
+            margin: 0 auto 1.5rem auto; /* Center the image and add bottom margin */
+             /* Optional: Add a border */
+            box-shadow: 0 0 0 0 rgba(255, 255, 0, 0.7); /* Initial shadow for pulsing effect (Yellow) */
+            animation: pulseMagnetic 2s infinite ease-in-out; /* Magnetic pulse animation */
+        }
+
+        /* Keyframes for the magnetic pulsing effect */
+        @keyframes pulseMagnetic {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 255, 0, 0.7); /* Yellow */
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(0, 0, 0, 0); /* Black (transparent) */
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 255, 0, 0); /* Yellow (transparent) */
+            }
+        }
+
+        /* Styling for time labels on the progress bar */
+        .time-label {
+            position: absolute;
+            top: -1.5rem; /* Position above the bar */
+            font-size: 0.75rem; /* Smaller font for labels */
+            color: #000000; /* Black color for labels */
+            font-weight: 600;
+            white-space: nowrap; /* Prevent text wrapping */
+        }
+        .time-label.start {
+            left: 0;
+        }
+        .time-label.end {
+            right: 0;
+        }
+
+        .next-show-info {
+            margin-top: 1.5rem;
+            font-size: 1rem;
+            color: black; /* Changed to yellow */
+            font-weight: 600;
+        }
+        .next-show-presenter {
+            font-size: 0.9rem;
+            color: black; /* Changed to a lighter grey */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-6 flashing-on-air">LIVE ON AIR</h1>
+        <div id="show-info" class="p-6 bg-blue-50 border border-blue-200 rounded-lg shadow-md">
+            <img id="show-image" class="show-image" src="" alt="Show Image">
+            <p class="show-time-at-top" id="current-show-duration-display"></p>
+            <p class="show-title" id="show-name">Loading Show...</p>
+            <p class="presenter-name" id="presenter-name"></p>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="show-progress-bar"></div>
+                <span class="time-label start" id="show-elapsed-time-label"></span>
+                <span class="time-label end" id="show-total-duration-label"></span>
+            </div>
+            <p class="next-show-info" id="next-show-name"></p>
+            <p class="next-show-presenter" id="next-show-presenter"></p>
+        </div>
+        <p class="time-display" id="current-time"></p>
+    </div>
+
+    <script>
+        function updateRadioShow() {
+            const now = new Date();
+            const day = now.getDay(); 
+            const currentHour = now.getHours(); // 0-23
+            const currentMinute = now.getMinutes();
+            const currentSecond = now.getSeconds();
+
+            const showNameElement = document.getElementById('show-name');
+            const presenterNameElement = document.getElementById('presenter-name');
+            const showProgressBar = document.getElementById('show-progress-bar');
+            const currentTimeElement = document.getElementById('current-time');
+            const showImageElement = document.getElementById('show-image');
+            const showElapsedTimeLabel = document.getElementById('show-elapsed-time-label');
+            const showTotalDurationLabel = document.getElementById('show-total-duration-label');
+            const nextShowNameElement = document.getElementById('next-show-name'); 
+            const nextShowPresenterElement = document.getElementById('next-show-presenter'); 
+            const currentShowDurationDisplay = document.getElementById('current-show-duration-display');
+
+            let showName = "Station Off Air";
+            let presenterName = "";
+            let showStartHour = 0;
+            let showStartMinute = 0;
+            let showEndHour = 0;
+            let showEndMinute = 0;
+            const universalImageUrl = "https://proxy.zeno.fm/content/stations/f0ccd091-d7e5-4939-98d8-52457d88ecd3/image/?u=1742924775000";
+            let imageUrl = universalImageUrl; 
+            let nextShowName = "No next show scheduled";
+            let nextShowPresenter = "";
+
+            const formattedTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const formattedDate = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            currentTimeElement.textContent = `Current Time: ${formattedTime} on ${formattedDate}`;
+
+            const formatDuration = (totalMinutes) => {
+                const hours = Math.floor(totalMinutes / 60);
+                const minutes = Math.floor(totalMinutes % 60);
+                const seconds = Math.floor((totalMinutes * 60 - Math.floor(totalMinutes * 60)) * 60) % 60; // Calculate remaining seconds
+                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            };
+            
+            const formatElapsedTime = (totalSeconds) => {
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            };
+
+            const formatTimeAmPm = (hour, minute) => {
+                const date = new Date();
+                date.setHours(hour);
+                date.setMinutes(minute);
+                return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+            };
+
+            // Define the schedule with start and end hours/minutes
+            const schedule = {
+                // Monday to Friday (1-5)
+                weekday: [
+                    { start: { hour: 6, minute: 0 }, end: { hour: 7, minute: 0 }, name: "THAHAMESO", presenter: "MASESI MOLABA" },
+                    { start: { hour: 7, minute: 0 }, end: { hour: 9, minute: 0 }, name: "MONAKALADI BREAKFAST SHOW", presenter: "JOHANNES LESIBA" },
+                    { start: { hour: 9, minute: 0 }, end: { hour: 12, minute: 0 }, name: "MAGNIFICENT MORNING", presenter: "PHELEKWA MPONO" },
+                    { start: { hour: 12, minute: 0 }, end: { hour: 15, minute: 0 }, name: "MATHULAHOHLE", presenter: "MPHO NTHEBE" },
+                    { start: { hour: 15, minute: 0 }, end: { hour: 18, minute: 0 }, name: "BEEZY DRIVE with Mo Simela", presenter: "MOHAU SEMELA" },
+                    { start: { hour: 18, minute: 0 }, end: { hour: 19, minute: 0 }, name: "MAMPODI", presenter: "MASILO MALAKOANE" },
+                    { start: { hour: 19, minute: 0 }, end: { hour: 20, minute: 0 }, name: "DINALEDI SPORTS SHOW", presenter: "MALEFETSANE MOREKI & MOJALEFA TSOTETSI" },
+                    { start: { hour: 20, minute: 0 }, end: { hour: 21, minute: 0 }, name: "NOTICE BOARD", presenter: "MOJALEFA ZIM" },
+                    { start: { hour: 21, minute: 0 }, end: { hour: 0, minute: 0, nextDay: true }, name: "CAMPUS CORNER", presenter: "JABULILE HLONGWANE" },
+                    { start: { hour: 0, minute: 0 }, end: { hour: 6, minute: 0, nextDay: false }, name: "Automated Playlist", presenter: "Automated Playlist" }
+                ],
+                // Sunday (0)
+                sunday: [
+                    { start: { hour: 6, minute: 0 }, end: { hour: 9, minute: 0 }, name: "LOVE AFFAIRS", presenter: "DIBUSENG PELEHA" },
+                    { start: { hour: 9, minute: 0 }, end: { hour: 12, minute: 0 }, name: "EMMANUEL", presenter: "MONYANE MOKOENA" },
+                    { start: { hour: 12, minute: 0 }, end: { hour: 15, minute: 0 }, name: "IKETLE", presenter: "Nkunyana Nkunyana (Skuzabell)" },
+                    { start: { hour: 15, minute: 0 }, end: { hour: 18, minute: 0 }, name: "MAKODILO", presenter: "Hananious Motaung" },
+                    { start: {hour: 18, minute: 0}, end: {hour: 21, minute: 0}, name: "EBENHEZER", presenter: "Apostle Lerato Mokayane"},
+                    { start: {hour: 21, minute: 0}, end: {hour: 0, minute: 0}, name:"DIVINE WORSHIP", presenter:"Malesedi Mofokeng" },
+                    { start: { hour: 0, minute: 0 }, end: { hour: 6, minute: 0 }, name: "AUTOMATED PLAYLIST", presenter: "Automated Playlist" } // Placeholder for any overnight if needed
+                ],
+                // Saturday (6)
+                saturday: [
+                    { start: { hour: 6, minute: 0 }, end: { hour: 9, minute: 0 }, name: "KA LAPENG", presenter: "MONYANE MOKOENA" },
+                    { start: { hour: 9, minute: 0 }, end: { hour: 12, minute: 0 }, name: "BEZZY FM TOP 30", presenter: "DJ INCUS THE ORIGINIAL" },
+                    { start: { hour: 12, minute: 0 }, end: { hour: 15, minute: 0 }, name: "IKETLE", presenter: "NKUNYANA NKUNYANA (SKUZABELL)" },
+                    { start: { hour: 15, minute: 0 }, end: { hour: 18, minute: 0 }, name: "BEZZY FM TOP 30", presenter: "DJ INCUS THE ORIGINIAL" },
+                    // Overnight show example
+                    { start: { hour: 18, minute: 0 }, end: { hour: 6, minute: 0, nextDay: true }, name: "Saturday Night Chill", presenter: "Automated Playlist" }
+                ]
+            };
+
+            let currentDaySchedule = [];
+            if (day >= 1 && day <= 5) {
+                currentDaySchedule = schedule.weekday;
+            } else if (day === 0) {
+                currentDaySchedule = schedule.sunday;
+            } else if (day === 6) {
+                currentDaySchedule = schedule.saturday;
+            }
+
+            let currentShow = null;
+            let nextShow = null;
+
+            for (let i = 0; i < currentDaySchedule.length; i++) {
+                const show = currentDaySchedule[i];
+                const showStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), show.start.hour, show.start.minute, 0);
+                let showEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), show.end.hour, show.end.minute, 0);
+
+                // Adjust showStart for previous day if it's an overnight show starting yesterday
+                if (show.start.prevDay) {
+                    showStart.setDate(showStart.getDate() - 1);
+                }
+                // Adjust showEnd for next day if it's an overnight show ending tomorrow
+                if (show.end.nextDay) {
+                    showEnd.setDate(showEnd.getDate() + 1);
+                }
+
+                // Check if current time falls within this show's adjusted start and end times
+                if (now >= showStart && now < showEnd) {
+                    currentShow = show;
+                    // Determine the next show
+                    if (i + 1 < currentDaySchedule.length) {
+                        nextShow = currentDaySchedule[i + 1];
+                    } else {
+                        // If it's the last show of the current day, get the first show of the next day
+                        const nextDayIndex = (day + 1) % 7;
+                        let nextDaySchedule = [];
+                        if (nextDayIndex >= 1 && nextDayIndex <= 5) {
+                            nextDaySchedule = schedule.weekday;
+                        } else if (nextDayIndex === 0) {
+                            nextDaySchedule = schedule.sunday;
+                        } else if (nextDayIndex === 6) {
+                            nextDaySchedule = schedule.saturday;
+                        }
+                        if (nextDaySchedule.length > 0) {
+                            nextShow = nextDaySchedule[0];
+                        }
+                    }
+                    break;
+                }
+            }
+
+            if (currentShow) {
+                showName = currentShow.name;
+                presenterName = currentShow.presenter;
+                showStartHour = currentShow.start.hour;
+                showStartMinute = currentShow.start.minute;
+                showEndHour = currentShow.end.hour;
+                showEndMinute = currentShow.end.minute;
+
+                // Calculate progress for the bar
+                const showStartDateForCalc = new Date(now.getFullYear(), now.getMonth(), now.getDate(), showStartHour, showStartMinute, 0);
+                let showEndDateForCalc = new Date(now.getFullYear(), now.getMonth(), now.getDate(), showEndHour, showEndMinute, 0);
+
+                if (currentShow.start.prevDay) { // If show started yesterday
+                    showStartDateForCalc.setDate(showStartDateForCalc.getDate() - 1);
+                }
+                if (currentShow.end.nextDay) { // If show ends tomorrow
+                    showEndDateForCalc.setDate(showEndDateForCalc.getDate() + 1);
+                }
+
+                const totalDurationMs = showEndDateForCalc.getTime() - showStartDateForCalc.getTime();
+                const elapsedTimeMs = now.getTime() - showStartDateForCalc.getTime();
+
+                const totalDurationSeconds = Math.floor(totalDurationMs / 1000); // Total duration in seconds
+                const elapsedSeconds = Math.floor(elapsedTimeMs / 1000);
+
+                let progressPercentage = (elapsedTimeMs / totalDurationMs) * 100;
+                if (progressPercentage < 0) progressPercentage = 0;
+                if (progressPercentage > 100) progressPercentage = 100;
+
+                showProgressBar.style.width = `${progressPercentage}%`;
+
+                // Update labels for the progress bar
+                showElapsedTimeLabel.textContent = formatElapsedTime(elapsedSeconds);
+                showTotalDurationLabel.textContent = formatElapsedTime(totalDurationSeconds); // Show total duration in HH:MM:SS
+
+                // Show start time to end time at the top
+                currentShowDurationDisplay.textContent = `${formatTimeAmPm(showStartHour, showStartMinute)} to ${formatTimeAmPm(showEndHour, showEndMinute)}`;
+            } else {
+                showName = "Station Off Air";
+                presenterName = "";
+                showProgressBar.style.width = `0%`;
+                showElapsedTimeLabel.textContent = "00:00:00";
+                showTotalDurationLabel.textContent = "00:00:00"; // Default for when off air
+                currentShowDurationDisplay.textContent = "Station Off Air";
+            }
+
+            // Update next show information
+            if (nextShow) {
+                nextShowName = `Next Up: ${nextShow.name}`;
+                nextShowPresenter = nextShow.presenter ? `Presenter: ${nextShow.presenter}` : '';
+            } else {
+                nextShowName = "No next show scheduled";
+                nextShowPresenter = "";
+            }
+
+            showNameElement.textContent = showName;
+            presenterNameElement.textContent = presenterName ? `Presenter: ${presenterName}` : '';
+
+            showImageElement.src = universalImageUrl; // Always use the universal image
+            showImageElement.onerror = () => {
+                showImageElement.src = "https://placehold.co/100x100/CCCCCC/666666?text=ERROR"; // Fallback for universal image
+            };
+
+            nextShowNameElement.textContent = nextShowName;
+            nextShowPresenterElement.textContent = nextShowPresenter;
+        }
+
+        document.addEventListener('DOMContentLoaded', updateRadioShow);
+        setInterval(updateRadioShow, 1000); // Update every second to keep time and progress accurate
+    </script>
+</body>
+</html>
